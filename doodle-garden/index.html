@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doodle Garden</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #14202b; font-family: system-ui, sans-serif; overflow: hidden; }
+  canvas { display: block; touch-action: none; cursor: crosshair; }
+  #bar { position: fixed; top: 12px; left: 12px; display: flex; gap: 8px; align-items: center; color: #cfe; }
+  button { background: #2c4458; color: #fff; border: 0; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  button:hover { background: #3b5a74; }
+  #hint { opacity: .7; font-size: 13px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bar">
+  <button id="clear">Clear</button>
+  <button id="save">Save PNG</button>
+  <span id="hint">Click or drag to plant flowers</span>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  fillBg();
+  ctx.putImageData(img, 0, 0);
+}
+function fillBg() {
+  ctx.fillStyle = '#14202b';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+canvas.width = innerWidth;
+canvas.height = innerHeight;
+fillBg();
+addEventListener('resize', resize);
+
+const rand = (a, b) => a + Math.random() * (b - a);
+
+function flower(x, y) {
+  const hue = rand(0, 360);
+  const petals = Math.floor(rand(5, 12));
+  const size = rand(14, 38);
+  const rot = rand(0, Math.PI * 2);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.fillStyle = `hsla(${hue}, 80%, 65%, 0.85)`;
+  for (let i = 0; i < petals; i++) {
+    ctx.rotate((Math.PI * 2) / petals);
+    ctx.beginPath();
+    ctx.ellipse(size * 0.6, 0, size * 0.6, size * 0.28, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = `hsl(${(hue + 180) % 360}, 90%, 70%)`;
+  ctx.beginPath();
+  ctx.arc(0, 0, size * 0.22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+let down = false, last = null;
+canvas.addEventListener('pointerdown', e => { down = true; last = [e.clientX, e.clientY]; flower(e.clientX, e.clientY); });
+addEventListener('pointerup', () => { down = false; });
+canvas.addEventListener('pointermove', e => {
+  if (!down) return;
+  if (Math.hypot(e.clientX - last[0], e.clientY - last[1]) > 36) {
+    last = [e.clientX, e.clientY];
+    flower(e.clientX, e.clientY);
+  }
+});
+
+document.getElementById('clear').onclick = fillBg;
+document.getElementById('save').onclick = () => {
+  const a = document.createElement('a');
+  a.download = 'doodle-garden.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+};
+</script>
+</body>
+</html>
